@@ -20,6 +20,12 @@ const ErrorFactory = (err: Error, res: Response) => {
 
 const ErrorHandler = (err: Error, _req: Request, res: Response, _next: NextFunction) => {
   const handledError = ErrorFactory(err, res)
+   if (err.message === 'ValidationError') {
+     return res.status(400).json({
+       error: 'Validation failed',
+       details: res.locals.validationError || [],
+     })
+   }
   if (!handledError) {
     console.log(JSON.stringify(`Unhandled error: ${err}`, null, 2))
     return res.status(500).send({ errors: [{ message: 'Internal server error' }], statusCode: 500 })

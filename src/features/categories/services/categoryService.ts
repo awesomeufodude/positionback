@@ -47,7 +47,7 @@ export const CategoryService = {
 
       // Check if a category with the same name already exists
       const duplicateCategory = await prisma.category.findFirst({
-        where: { name: data.name.trim().toLowerCase() }, // Case-insensitive
+        where: { name: data.name }, // Case-insensitive
       })
 
       if (duplicateCategory) {
@@ -68,7 +68,7 @@ export const CategoryService = {
       // Create the category if all validations pass
       const category = await prisma.category.create({
         data: {
-          name: data.name.trim().toLowerCase(), // Normalize name
+          name: data.name, // Normalize name
           parentId: data.parentId || null,
         },
       })

@@ -1,10 +1,10 @@
+import { Prisma } from '@prisma/client'
 import { prisma } from '../../../config/database'
 import { Article, CreateArticleInput, ArticleQueryParams, UpdateArticleInput } from '../../../types/articleTypes'
 import { HttpException } from '../../../utils/HttpExceptions'
 
 export const ArticleService = {
-  // Fetch paginated articles with optional filters
-  getArticles: async (query: ArticleQueryParams): Promise<Article[]> => {
+  getArticles: async (query: ArticleQueryParams): Promise<{ data: Article[]; pagination: { total: number; page: number; limit: number; totalPages: number; hasNextPage: boolean; hasPreviousPage: boolean } }> => {
     const { page = 1, limit = 10, category, isFavorite, minRating } = query
 
     // Validate query parameters
@@ -14,12 +14,13 @@ export const ArticleService = {
     const skip = (page - 1) * limit
     const take = limit
 
-    const where: any = {}
+    const where: Prisma.ArticleWhereInput = {}
     if (category) where.categoryId = category
     if (isFavorite !== undefined) where.isFavorite = isFavorite
     if (minRating !== undefined) where.rating = { gte: minRating }
 
-    return await prisma.article.findMany({
+    const totalArticles = await prisma.article.count({ where })
+    const articles = await prisma.article.findMany({
       where,
       skip,
       take,
@@ -29,17 +30,34 @@ export const ArticleService = {
         author: true,
       },
     })
+
+    if (articles.length === 0) throw new HttpException(404, 'No articles found.')
+
+    articles.map((article) => (article['author'].password = ''));  
+
+    return {
+      data: articles,
+      pagination: {
+        total: totalArticles,
+        page,
+        limit,
+        totalPages: Math.ceil(totalArticles / limit),
+        hasNextPage: page < Math.ceil(totalArticles / limit),
+        hasPreviousPage: page > 1,
+      },
+    }
   },
 
   // Create a new article
   createArticle: async (data: CreateArticleInput): Promise<Article> => {
-    const { categoryId, authorId, title, description } = data
+    const { categoryId, authorId, title, description, rating } = data
 
     // Validate required fields
     if (!title || title.trim() === '') throw new HttpException(422, 'Title is required.')
     if (!description || description.trim() === '') throw new HttpException(422, 'Description is required.')
     if (!categoryId) throw new HttpException(422, 'Category ID is required.')
     if (!authorId) throw new HttpException(422, 'Author ID is required.')
+    if (rating < 0 || rating > 5) throw new HttpException(422, 'Rating must be between 0 and 5.')
 
     // Check if category exists
     const categoryExists = await prisma.category.findUnique({ where: { id: categoryId } })
@@ -59,21 +77,22 @@ export const ArticleService = {
         author: {
           connect: { id: authorId },
         },
+        rating,
       },
       include: {
         category: true,
         author: true,
       },
-    })    
+    })
 
-    article['author'].password = ""
+    article['author'].password = ''
 
-    return  article
+    return article
   },
 
   // Update an existing article
   updateArticle: async (id: string, data: UpdateArticleInput): Promise<Article> => {
-    const { categoryId, authorId, ...updateData } = data
+    const { categoryId, authorId, rating, ...updateData } = data
 
     // Check if the article exists
     const articleExists = await prisma.article.findUnique({ where: { id } })
@@ -90,11 +109,16 @@ export const ArticleService = {
       if (!authorExists) throw new HttpException(404, `Author with ID "${authorId}" not found.`)
     }
 
+    if (rating !== undefined) {
+      if (rating < 0 || rating > 5) throw new HttpException(422, 'Rating must be between 0 and 5.')
+    }
+
     // Update the article
     const updatedArticle = await prisma.article.update({
       where: { id },
       data: {
         ...updateData,
+        ...(rating !== undefined ? { rating } : 0),
         ...(categoryId ? { category: { connect: { id: categoryId } } } : {}),
         ...(authorId ? { author: { connect: { id: authorId } } } : {}),
       },
@@ -104,9 +128,9 @@ export const ArticleService = {
       },
     })
 
-    updatedArticle['author'].password = ""
+    updatedArticle['author'].password = ''
 
-    return  updatedArticle
+    return updatedArticle
   },
 
   // Rate an article
@@ -144,16 +168,14 @@ export const ArticleService = {
 
     const article = await prisma.article.findUnique({
       where: { id },
-      include: { category: true, author: true},
+      include: { category: true, author: true },
     })
-
-    
 
     if (!article) {
       throw new HttpException(404, `Article with ID "${id}" not found.`)
     }
 
-    article['author'].password = ""
+    article['author'].password = ''
 
     return article
   },
@@ -196,8 +218,8 @@ export const ArticleService = {
       },
     })
     articles.map((article) => {
-        article['author'].password = ""
+      article['author'].password = ''
     })
-    return articles 
+    return articles
   },
 }

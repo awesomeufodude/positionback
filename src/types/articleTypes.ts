@@ -15,6 +15,7 @@ export interface CreateArticleInput {
   description: string
   categoryId: string
   authorId: string
+  rating: number
 }
 
 export interface UpdateArticleInput extends Partial<CreateArticleInput> {}

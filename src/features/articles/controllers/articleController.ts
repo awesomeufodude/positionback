@@ -1,22 +1,43 @@
 import { NextFunction, Request, Response } from 'express'
 import { ArticleService } from '../services/articleService'
 import { ArticleQueryParams, CreateArticleInput, UpdateArticleInput } from '../../../types/articleTypes'
+import { HttpException } from '../../../utils/HttpExceptions'
 
 // Fetch articles with pagination and filters
 export const getArticles = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    // Parse and validate query parameters
     const query: ArticleQueryParams = {
-      page: req.query.page ? parseInt(req.query.page as string, 10) : undefined,
-      limit: req.query.limit ? parseInt(req.query.limit as string, 10) : undefined,
+      page: req.query.page ? parseInt(req.query.page as string, 10) : 1,
+      limit: req.query.limit ? parseInt(req.query.limit as string, 10) : 10,
       category: req.query.category as string,
       isFavorite: req.query.isFavorite ? req.query.isFavorite === 'true' : undefined,
       minRating: req.query.minRating ? parseFloat(req.query.minRating as string) : undefined,
     }
 
-    const articles = await ArticleService.getArticles(query)
-    res.status(200).json(articles)
+    if (query.page && query.page < 1) throw new HttpException(400, 'Page must be greater than 0.')
+    if ( query.limit && query.limit < 1) throw new HttpException(400, 'Limit must be greater than 0.')
+
+    if (query.page && isNaN(query.page)) {
+      throw new HttpException(400, 'Invalid page parameter. Must be a number.')
+    }
+    if (query.limit && isNaN(query.limit)) {
+      throw new HttpException(400, 'Invalid limit parameter. Must be a number.')
+    }
+    if (query.minRating && isNaN(query.minRating)) {
+      throw new HttpException(400, 'Invalid minRating parameter. Must be a number.')
+    }
+
+    const result = await ArticleService.getArticles(query)
+    res.status(200).json(result)
   } catch (err) {
-    next(err) // Pass errors to the error-handling middleware
+    if (err instanceof HttpException) {
+      res.status(err.statusCode || 400).json({ message: err.message })
+    } else {
+      console.error('Unexpected error:', err)
+      res.status(500).json({ message: 'Internal server error' })
+    }
+    next(err) // Pass errors to the global error-handling middleware
   }
 }
 
@@ -38,14 +59,14 @@ export const getArticleById = async (req: Request, res: Response, next: NextFunc
 // Create a new article
 export const createArticle = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { title, description, categoryId, authorId } = req.body as CreateArticleInput
+    const { title, description, categoryId, authorId, rating } = req.body as CreateArticleInput
 
     if (!title || !description || !categoryId || !authorId) {
       res.status(400).json({ message: 'Missing required fields: title, description, categoryId, authorId' })
       return
     }
 
-    const newArticle = await ArticleService.createArticle({ title, description, categoryId, authorId })
+    const newArticle = await ArticleService.createArticle({ title, description, categoryId, authorId, rating })
     res.status(201).json(newArticle)
   } catch (err) {
     next(err)

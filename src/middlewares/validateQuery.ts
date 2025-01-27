@@ -6,7 +6,7 @@ export const validateQuery = (schema: ObjectSchema) => {
     const { error } = schema.validate(req.query, { abortEarly: false })
 
     if (error) {
-      // Attach the validation error to `res.locals` so the error handler can process it
+      // Attach the validation error details to `res.locals`
       res.locals.validationError = error.details.map((detail) => detail.message)
       return next(new Error('ValidationError'))
     }
