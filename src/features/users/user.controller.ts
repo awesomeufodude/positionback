@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express'
-import { registerUser, loginUser, getUserByToken } from '../services/userService'
+import { registerUser, loginUser, getUserByToken } from './user.service'
 
 export async function register(req: Request, res: Response) {
   const { email, username, password } = req.body

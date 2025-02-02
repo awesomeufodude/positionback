@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express'
-import { ArticleService } from '../services/articleService'
-import { ArticleQueryParams, CreateArticleInput, UpdateArticleInput } from '../../../types/articleTypes'
-import { HttpException } from '../../../utils/HttpExceptions'
+import { ArticleService } from './article.service'
+import { ArticleQueryParams, CreateArticleInput, UpdateArticleInput } from '../../types/article.types'
+import { HttpException } from '../../utils/HttpExceptions'
 
 // Fetch articles with pagination and filters
 export const getArticles = async (req: Request, res: Response, next: NextFunction) => {
@@ -16,7 +16,7 @@ export const getArticles = async (req: Request, res: Response, next: NextFunctio
     }
 
     if (query.page && query.page < 1) throw new HttpException(400, 'Page must be greater than 0.')
-    if ( query.limit && query.limit < 1) throw new HttpException(400, 'Limit must be greater than 0.')
+    if (query.limit && query.limit < 1) throw new HttpException(400, 'Limit must be greater than 0.')
 
     if (query.page && isNaN(query.page)) {
       throw new HttpException(400, 'Invalid page parameter. Must be a number.')

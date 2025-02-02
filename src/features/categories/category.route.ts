@@ -1,6 +1,6 @@
 import express from 'express'
 
-import { authenticate } from '../../../middlewares/authenticate'
+import { authenticate } from '../../middlewares/auth.middleware'
 
 import {
   createCategory,
@@ -9,8 +9,8 @@ import {
   getCategories,
   getCategoryById,
   updateCategory,
-} from '../controllers/categoryController'
-import { asyncWrapper } from '../../../utils/asyncWrapper'
+} from './category.controller'
+import { asyncWrapper } from '../../utils/asyncWrapper'
 
 const router = express.Router()
 

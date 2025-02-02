@@ -1,10 +1,22 @@
 import { Prisma } from '@prisma/client'
-import { prisma } from '../../../config/database'
-import { Article, CreateArticleInput, ArticleQueryParams, UpdateArticleInput } from '../../../types/articleTypes'
-import { HttpException } from '../../../utils/HttpExceptions'
+import { prisma } from '../../config/database'
+import { Article, CreateArticleInput, ArticleQueryParams, UpdateArticleInput } from '../../types/article.types'
+import { HttpException } from '../../utils/HttpExceptions'
 
 export const ArticleService = {
-  getArticles: async (query: ArticleQueryParams): Promise<{ data: Article[]; pagination: { total: number; page: number; limit: number; totalPages: number; hasNextPage: boolean; hasPreviousPage: boolean } }> => {
+  getArticles: async (
+    query: ArticleQueryParams,
+  ): Promise<{
+    data: Article[]
+    pagination: {
+      total: number
+      page: number
+      limit: number
+      totalPages: number
+      hasNextPage: boolean
+      hasPreviousPage: boolean
+    }
+  }> => {
     const { page = 1, limit = 10, category, isFavorite, minRating } = query
 
     // Validate query parameters
@@ -33,7 +45,7 @@ export const ArticleService = {
 
     if (articles.length === 0) throw new HttpException(404, 'No articles found.')
 
-    articles.map((article) => (article['author'].password = ''));  
+    articles.map((article) => (article['author'].password = ''))
 
     return {
       data: articles,

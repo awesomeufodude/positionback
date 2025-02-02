@@ -1,5 +1,5 @@
-import { prisma } from '../../../config/database'
-import { HttpException } from '../../../utils/HttpExceptions'
+import { prisma } from '../../config/database'
+import { HttpException } from '../../utils/HttpExceptions'
 
 export const CategoryService = {
   // Get all categories with subcategories

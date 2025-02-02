@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken'
 import bcrypt from 'bcrypt'
-import { prisma } from '../../../config/database'
-import { HttpException } from '../../../utils/HttpExceptions'
+import { prisma } from '../../config/database'
+import { HttpException } from '../../utils/HttpExceptions'
 
 const JWT_SECRET = process.env.JWT_SECRET
 
